@@ -27,6 +27,7 @@ float[] center = {250, 450};
 float[] rectX = {250, 350, 250, 150};
 float[] rectY = {350, 450, 550, 450};
 int firstChoice = -1;
+boolean start = false;
 void setup() {
   size(500, 900); //you can change this to be fullscreen
   frameRate(60);
@@ -80,7 +81,7 @@ void draw() {
 
   fill(255);//white
   text("Trial " + (index+1) + " of " +trialCount, width/2, 50);
-  text("Target #" + (targets.get(index).target)+1, width/2, 100);
+  text("Target #" + ((targets.get(index).target)+1), width/2, 100);
 
   //if (targets.get(index).action==0)
   //  text("UP", width/2, 150);
@@ -129,23 +130,34 @@ void draw() {
 
 void onAccelerometerEvent(float x, float y, float z)
 {
-  if (y > 7) {
-    firstChoice = 0;
-  } else if (y < -7) {
-    firstChoice = 2;
-  } else if (x > 7) {
-    firstChoice = 1;
-  } else if (x < -7){
-    firstChoice = 3;
+  int index = trialIndex;
+
+  if (userDone || index>=targets.size())
+    return;
+  Target t = targets.get(index);
+  if (t==null)
+    return;
+    
+  if (start) {
+    if (y > 7) {
+      firstChoice = 0;
+    } else if (y < -7) {
+      firstChoice = 2;
+    } else if (x > 7) {
+      firstChoice = 1;
+    } else if (x < -7){
+      firstChoice = 3;
+    } 
+  } else {
+    if (x > -2 && x < 2 && y > -2 && y < 2) {
+      start = true;
+    }
   }
   //println(x);
   //println(y);
   //println(z);
   //println("**********");
-  //int index = trialIndex;
-
-  //if (userDone || index>=targets.size())
-  //  return;
+  
 
   //if (light>proxSensorThreshold) //only update cursor, if light is low
   //{
@@ -153,10 +165,7 @@ void onAccelerometerEvent(float x, float y, float z)
   //  cursorY = 300-y*40; //cented to window and scaled
   //}
 
-  //Target t = targets.get(index);
-
-  //if (t==null)
-  //  return;
+  
  
   //if (light<=proxSensorThreshold && abs(z-9.8)>4 && countDownTimerWait<0) //possible hit event
   //{
