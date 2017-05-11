@@ -24,14 +24,14 @@ boolean userDone = false;
 int countDownTimerWait = 0;
 
 void setup() {
-  size(600, 600); //you can change this to be fullscreen
+  size(500, 900); //you can change this to be fullscreen
   frameRate(60);
   sensor = new KetaiSensor(this);
   sensor.start();
   orientation(PORTRAIT);
 
   rectMode(CENTER);
-  textFont(createFont("Arial", 40)); //sets the font to Arial size 20
+  textFont(createFont("Arial", 20)); //sets the font to Arial size 20
   textAlign(CENTER);
 
   for (int i=0; i<trialCount; i++)  //don't change this!
