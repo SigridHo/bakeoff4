@@ -29,11 +29,12 @@ float[] rectY = {350, 450, 550, 450};
 int firstChoice = -1;
 int currentFirst = -1;
 int secondChoice = -1;
-boolean start = false;
+//boolean start = false;
 boolean firstSet = false;
 boolean up = false;
 PVector rotations, rotationStandard;
 String[] instr = {"forward", "back"};
+int tiltCount = 0;
 
 void setup() {
   size(500, 900, OPENGL); //you can change this to be fullscreen
@@ -89,8 +90,9 @@ void draw() {
 
   fill(255);//white
   text("Trial " + (index+1) + " of " +trialCount, width/2, 50);
-  text("Target #" + ((targets.get(index).target)+1) + ". Start from flat. Rotate your phone to make the green square up", width/2, 100);
-  text("Action " + ((targets.get(index).action)+1) + ". Rotate back. Lean " + instr[targets.get(index).action], width/2, 150);
+  text("Target #" + ((targets.get(index).target)+1) + ". Rotate and wave.", width/2, 100);
+  if(up) 
+    text("Action " + ((targets.get(index).action)+1) + ". Rotate back. Lean " + instr[targets.get(index).action], width/2, 150);
 
   //if (targets.get(index).action==0)
   //  text("UP", width/2, 150);
@@ -101,12 +103,15 @@ void draw() {
   {
     if (targets.get(index).target==i)
       fill(0, 255, 0);
-    else
+    else 
       fill(180, 180, 180);
     //ellipse(300, i*150+100, 100, 100);
     if (i == firstChoice) {
       stroke(255,0,0);
       strokeWeight(10);
+      if (firstSet) {
+        fill(255,0,0);
+      }
     }
      rect(rectX[i], rectY[i], 100, 100);
      fill(0);
@@ -210,16 +215,17 @@ void onOrientationEvent(float x, float y, float z) {
       //}
 //    }
 //    
-    if (secondChoice != -1) {
+    if (secondChoice != -1 && countDownTimerWait < 0) {
       if (firstChoice == t.target && secondChoice == t.action) {
         println("Right target, right action!");
         trialIndex++; //next trial!
-        start = false;
+        //start = false;
         firstSet = false;
         up = false;
         firstChoice = -1;
         currentFirst = -1;
         secondChoice = -1;
+        countDownTimerWait=30;
       } else {
         if (firstChoice != t.target)
           println("Wrong target!" + firstChoice);
@@ -227,13 +233,14 @@ void onOrientationEvent(float x, float y, float z) {
           println("Wrong action!" + secondChoice);
         if (trialIndex>0) {
           trialIndex--; //move back one trial as penalty!
-          start = false;
-          firstSet = false;
-          up = false;
-          firstChoice = -1;
-          currentFirst = -1;
-          secondChoice = -1;
+          //start = false;
         }       
+        firstSet = false;
+        up = false;
+        firstChoice = -1;
+        currentFirst = -1;
+        secondChoice = -1;
+        countDownTimerWait=30;
       }
     }
     
@@ -247,7 +254,8 @@ void onProximityEvent(float d) {
   Target t = targets.get(index);
   if (t==null)
     return;
-  if (!start || firstChoice == -1) return;
+  //if (!start || firstChoice == -1) return;
+  if (firstChoice == -1) return;
   if (d < 0.1 && !firstSet) {
     println("!!!!!!!!!!!!!!!!!!!!!!!!!!!");
     firstSet = true;
@@ -266,8 +274,9 @@ void onAccelerometerEvent(float x, float y, float z)
   if (t==null)
     return;
     
-  if (start && !firstSet) {
-    //boolean flag = true;
+  //if (start && !firstSet) {
+    if (!firstSet) {
+    boolean flag = true;
     if (y > 7) {
       firstChoice = 0;
     } else if (y < -7) {
@@ -276,19 +285,24 @@ void onAccelerometerEvent(float x, float y, float z)
       firstChoice = 1;
     } else if (x < -7){
       firstChoice = 3;
-    //}  else {
-    //  flag = false;
+    }  else {
+      flag = false;
     }
-    //if (flag) {
-    //  if (firstChoice != currentFirst) {
-    //    currentFirst = firstChoice;
-    //    rotationStandard = rotations;
-    //  }
-    //}
+    if (flag && countDownTimerWait < 0) {
+      if (firstChoice != currentFirst) {
+        currentFirst = firstChoice;
+        tiltCount = millis();
+      } else {
+        int currentTime = millis();
+        if (currentTime > tiltCount + 500) {
+          firstSet = true;
+        }
+      }
+    }
   } else if (!firstSet) {
-    if (x > -2 && x < 2 && y > -2 && y < 2) {
-      start = true;
-    } 
+    //if (x > -2 && x < 2 && y > -2 && y < 2) {
+    //  start = true;
+    //} 
   } else {
     if (y > 7) {
       up = true;
