@@ -27,9 +27,16 @@ float[] center = {250, 450};
 float[] rectX = {250, 350, 250, 150};
 float[] rectY = {350, 450, 550, 450};
 int firstChoice = -1;
+int currentFirst = -1;
+int secondChoice = -1;
 boolean start = false;
+boolean firstSet = false;
+boolean up = false;
+PVector rotations, rotationStandard;
+String[] instr = {"forward", "back"};
+
 void setup() {
-  size(500, 900); //you can change this to be fullscreen
+  size(500, 900, OPENGL); //you can change this to be fullscreen
   frameRate(60);
   sensor = new KetaiSensor(this);
   sensor.start();
@@ -39,7 +46,8 @@ void setup() {
   //textFont(createFont("Arial", 20)); //sets the font to Arial size 20
   textSize(20);
   textAlign(CENTER);
-
+  rotations = new PVector();
+  rotationStandard = new PVector();
   for (int i=0; i<trialCount; i++)  //don't change this!
   {
     Target t = new Target();
@@ -81,7 +89,8 @@ void draw() {
 
   fill(255);//white
   text("Trial " + (index+1) + " of " +trialCount, width/2, 50);
-  text("Target #" + ((targets.get(index).target)+1), width/2, 100);
+  text("Target #" + ((targets.get(index).target)+1) + ". Start from flat. Rotate your phone to make the green square up", width/2, 100);
+  text("Action " + ((targets.get(index).action)+1) + ". Rotate back. Lean " + instr[targets.get(index).action], width/2, 150);
 
   //if (targets.get(index).action==0)
   //  text("UP", width/2, 150);
@@ -128,6 +137,125 @@ void draw() {
   
 }
 
+
+void drawArrow(float x1, float y1, float x2, float y2) {
+  float a = dist(x1, y1, x2, y2)/10;
+  pushMatrix();
+  translate(x2, y2);
+  rotate(atan2(y2 - y1, x2 - x1));
+  triangle(- a * 2 , - a, 0, 0, - a * 2, a);
+  popMatrix();
+  stroke(0);
+  line(x1, y1, x2, y2);
+  noStroke();
+}
+
+void onOrientationEvent(float x, float y, float z) {
+  int index = trialIndex;
+
+  if (userDone || index>=targets.size())
+    return;
+  Target t = targets.get(index);
+  if (t==null)
+    return;
+  rotations.set(x, y, z);
+  if (!firstSet) return;
+  if (firstSet && up) {
+    if (y < -100) {
+      secondChoice = 0;
+    } 
+    if (y > -20) {
+      secondChoice = 1;
+    }
+    //float minBound = (rotationStandard.x - 30 + 360) % 360;
+    //float maxBound = (rotationStandard.x + 30) % 360;
+    //println("##################");
+    //println(rotationStandard.x);
+    //println("&&&&&&&&&&&&&&&&&&&&&&&");
+    //println(x);
+    //println("$$$$$$$$$$$$$$$$$");
+    //if (rotationStandard.x >= 60 && rotationStandard.x <= 300) {
+    //  if (x > rotationStandard.x - 60 && x < rotationStandard.x - 30) {
+    //    secondChoice = 0;
+    //  } else if (x > rotationStandard.x + 30 && x < rotationStandard.x + 60) {
+    //    secondChoice = 1;
+    //  }
+    //} else if (rotationStandard.x < 60) {
+    //  if (rotationStandard.x >= 30) {
+    //    if ((x > rotationStandard.x + 300) || (x < rotationStandard.x - 30)) {
+    //      secondChoice = 0;
+    //    } else if ((x > rotationStandard.x + 30) && (x < rotationStandard.x + 60)) {
+    //      secondChoice = 1;
+    //    }
+    //  } else {
+    //    if (x > rotationStandard.x + 300 && x < rotationStandard.x + 330) {
+    //      secondChoice = 0;
+    //    } else if ((x > rotationStandard.x + 30) && (x < rotationStandard.x + 60)) {
+    //      secondChoice = 1;
+    //    }
+    //  }
+    //} else {
+    //  if (rotationStandard.x >= 330) {
+        //if (x > rotationStandard.x - 60 && x < rotationStandard.x - 30) {
+        //  secondChoice = 0;
+        //} else if ((x > (rotationStandard.x + 30) % 360) && (x < (rotationStandard.x + 60) % 360)) {
+        //  secondChoice = 1;
+        //}
+     // } else {
+        //if (x > rotationStandard.x - 60 && x < rotationStandard.x - 30) {
+        //  secondChoice = 0;
+        //} else if ((x > rotationStandard.x + 30) || (x < (rotationStandard.x + 60) % 360)) {
+        //  secondChoice = 1;
+        //}
+      //}
+//    }
+//    
+    if (secondChoice != -1) {
+      if (firstChoice == t.target && secondChoice == t.action) {
+        println("Right target, right action!");
+        trialIndex++; //next trial!
+        start = false;
+        firstSet = false;
+        up = false;
+        firstChoice = -1;
+        currentFirst = -1;
+        secondChoice = -1;
+      } else {
+        if (firstChoice != t.target)
+          println("Wrong target!" + firstChoice);
+        if (secondChoice != t.action) 
+          println("Wrong action!" + secondChoice);
+        if (trialIndex>0) {
+          trialIndex--; //move back one trial as penalty!
+          start = false;
+          firstSet = false;
+          up = false;
+          firstChoice = -1;
+          currentFirst = -1;
+          secondChoice = -1;
+        }       
+      }
+    }
+    
+  }
+}
+
+void onProximityEvent(float d) {
+  int index = trialIndex;
+  if (userDone || index>=targets.size())
+    return;
+  Target t = targets.get(index);
+  if (t==null)
+    return;
+  if (!start || firstChoice == -1) return;
+  if (d < 0.1 && !firstSet) {
+    println("!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+    firstSet = true;
+//    rotationStandard.set(rotations);
+  }
+}
+
+
 void onAccelerometerEvent(float x, float y, float z)
 {
   int index = trialIndex;
@@ -138,7 +266,8 @@ void onAccelerometerEvent(float x, float y, float z)
   if (t==null)
     return;
     
-  if (start) {
+  if (start && !firstSet) {
+    //boolean flag = true;
     if (y > 7) {
       firstChoice = 0;
     } else if (y < -7) {
@@ -147,18 +276,25 @@ void onAccelerometerEvent(float x, float y, float z)
       firstChoice = 1;
     } else if (x < -7){
       firstChoice = 3;
-    } 
-  } else {
+    //}  else {
+    //  flag = false;
+    }
+    //if (flag) {
+    //  if (firstChoice != currentFirst) {
+    //    currentFirst = firstChoice;
+    //    rotationStandard = rotations;
+    //  }
+    //}
+  } else if (!firstSet) {
     if (x > -2 && x < 2 && y > -2 && y < 2) {
       start = true;
+    } 
+  } else {
+    if (y > 7) {
+      up = true;
     }
   }
-  //println(x);
-  //println(y);
-  //println(z);
-  //println("**********");
   
-
   //if (light>proxSensorThreshold) //only update cursor, if light is low
   //{
   //  cursorX = 300+x*40; //cented to window and scaled
@@ -209,15 +345,3 @@ void onAccelerometerEvent(float x, float y, float z)
 //{
 //  light = v;
 //}
-
-void drawArrow(float x1, float y1, float x2, float y2) {
-  float a = dist(x1, y1, x2, y2)/10;
-  pushMatrix();
-  translate(x2, y2);
-  rotate(atan2(y2 - y1, x2 - x1));
-  triangle(- a * 2 , - a, 0, 0, - a * 2, a);
-  popMatrix();
-  stroke(0);
-  line(x1, y1, x2, y2);
-  noStroke();
-}
