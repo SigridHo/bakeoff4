@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+astyle --pad-oper --pad-header --mode=java --indent=spaces=2 --max-code-length=80 *.pde
