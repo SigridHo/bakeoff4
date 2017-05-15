@@ -8,13 +8,10 @@ final int Y_SAMPLE = 720;
 final int RETICLE_LENGTH = 40;
 final boolean DEBUG_CAMERA = false;
 
-boolean cameraStarted = false;
-
 public enum Color
 {
   RED (0xFFFF0000),
   GREEN(0xFF00FF00),
-  DARK(0xFF000000),
   OTHER(0xFF808080);
 
   public final int hex;
@@ -50,18 +47,19 @@ void onCameraPreviewEvent()
 {
   cam.read();
   color c = cam.get(Y_SAMPLE, X_SAMPLE);
-  currColor = classifyColor(c);
+  Color newColor = classifyColor(c);
+  currColor = newColor == Color.OTHER ? currColor : newColor;
   debugCamera("Red: " + Float.toString(red(c)) +
               " Green: " + Float.toString(green(c)) +
               " Blue: " + Float.toString(blue(c)) +
               System.lineSeparator() +
-              currColor);
+              newColor);
 }
 
 Color classifyColor(color c)
 {
   if (red(c) + green(c) + blue(c) < 80.0)
-    return Color.DARK;
+    return Color.OTHER;
   else if (red(c) / (green(c) + blue(c)) > 0.8)
     return Color.RED;
   else if (green(c) / red(c) > 1.4)
