@@ -1,6 +1,29 @@
 import ketai.camera.*;
 
 KetaiCamera cam;
+Color currColor = Color.OTHER;
+
+final int X_SAMPLE = 540;
+final int Y_SAMPLE = 720;
+final int RETICLE_LENGTH = 40;
+final boolean DEBUG_CAMERA = false;
+
+boolean cameraStarted = false;
+
+public enum Color
+{
+  RED (0xFFFF0000),
+  GREEN(0xFF00FF00),
+  DARK(0xFF000000),
+  OTHER(0xFF808080);
+
+  public final int hex;
+
+  Color(int hex)
+  {
+    this.hex = hex;
+  }
+}
 
 void setupCamera()
 {
@@ -9,38 +32,31 @@ void setupCamera()
   cam.manualSettings();
 }
 
-final int X_SAMPLE = 540;
-final int Y_SAMPLE = 720;
-final int RETICLE_LENGTH = 40;
-
-color c;
-
 void drawPreview()
 {
-  background(0);
   pushMatrix();
   rotate(-PI / 2);
   scale(1.0, -1.0);
   image(cam, -1440, -1080);
   popMatrix();
+  stroke(BACKGROUND_COLOR);
+  strokeWeight(4);
   line(X_SAMPLE - RETICLE_LENGTH, Y_SAMPLE, X_SAMPLE + RETICLE_LENGTH, Y_SAMPLE);
   line(X_SAMPLE, Y_SAMPLE - RETICLE_LENGTH, X_SAMPLE, Y_SAMPLE + RETICLE_LENGTH);
-
-
+  noStroke();
 }
 
 void onCameraPreviewEvent()
 {
   cam.read();
-  c = cam.get(Y_SAMPLE, X_SAMPLE);
-  System.out.println("Red: " + Float.toString(red(c)) +
-                     " Green: " + Float.toString(green(c)) +
-                     " Blue: " + Float.toString(blue(c)) +
-                     System.lineSeparator() +
-                     classifyColor(c));
+  color c = cam.get(Y_SAMPLE, X_SAMPLE);
+  currColor = classifyColor(c);
+  debugCamera("Red: " + Float.toString(red(c)) +
+              " Green: " + Float.toString(green(c)) +
+              " Blue: " + Float.toString(blue(c)) +
+              System.lineSeparator() +
+              currColor);
 }
-
-public enum Color { RED, GREEN, DARK, OTHER };
 
 Color classifyColor(color c)
 {
@@ -52,4 +68,18 @@ Color classifyColor(color c)
     return Color.GREEN;
   else
     return Color.OTHER;
+}
+
+Color actionToColor(int action)
+{
+  if (action == 0)
+    return Color.GREEN;
+  else
+    return Color.RED;
+}
+
+void debugCamera(String s)
+{
+  if (DEBUG_CAMERA)
+    System.out.println(s);
 }
